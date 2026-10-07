@@ -1,0 +1,170 @@
+-- ==========================================
+-- Create the Schema if it doesn't exist
+-- ==========================================
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'SocialMediaDB')
+BEGIN
+    EXEC('CREATE SCHEMA [SocialMediaDB]');
+END
+GO
+
+-- ==========================================
+-- CREATE TABLES under SocialMediaDB Schema
+-- ==========================================
+
+-- Create Users Table (Parent Table)
+CREATE TABLE [SocialMediaDB].[Users] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [Username] NVARCHAR(50) NOT NULL,
+    [Email] NVARCHAR(256) NOT NULL,
+    [PasswordHash] NVARCHAR(MAX) NOT NULL,
+    [DisplayName] NVARCHAR(100) NULL,
+    [Bio] NVARCHAR(500) NULL,
+    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    [UpdatedAt] DATETIMEOFFSET NULL,
+    [IsDeleted] BIT DEFAULT 0 NOT NULL,
+    CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([Id])
+);
+GO
+
+-- Create Posts Table
+CREATE TABLE [SocialMediaDB].[Posts] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [AuthorId] INT NOT NULL,
+    [Content] NVARCHAR(MAX) NOT NULL,
+    [PostImage] NVARCHAR(MAX) NULL,
+    [Visibility] INT DEFAULT 0 NOT NULL,
+    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    [UpdatedAt] DATETIMEOFFSET NULL,
+    [IsEdited] BIT DEFAULT 0 NOT NULL,
+    [IsDeleted] BIT DEFAULT 0 NOT NULL,
+    CONSTRAINT [PK_Posts] PRIMARY KEY CLUSTERED ([Id]),
+    CONSTRAINT [FK_Posts_Users_AuthorId] FOREIGN KEY ([AuthorId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+-- Create Comments Table
+CREATE TABLE [SocialMediaDB].[Comments] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [PostId] INT NOT NULL,
+    [AuthorId] INT NOT NULL,
+    [ParentCommentId] INT NULL,
+    [Content] NVARCHAR(1000) NOT NULL,
+    [CommentImage] NVARCHAR(MAX) NULL,
+    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    [UpdatedAt] DATETIMEOFFSET NULL,
+    [IsEdited] BIT DEFAULT 0 NOT NULL,
+    [IsDeleted] BIT DEFAULT 0 NOT NULL,
+    CONSTRAINT [PK_Comments] PRIMARY KEY CLUSTERED ([Id]),
+    CONSTRAINT [FK_Comments_Posts_PostId] FOREIGN KEY ([PostId]) 
+        REFERENCES [SocialMediaDB].[Posts] ([Id]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_Comments_Users_AuthorId] FOREIGN KEY ([AuthorId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_Comments_Comments_ParentCommentId] FOREIGN KEY ([ParentCommentId]) 
+        REFERENCES [SocialMediaDB].[Comments] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+-- Create Friendships Table
+CREATE TABLE [SocialMediaDB].[Friendships] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [RequesterId] INT NOT NULL,
+    [AddresseeId] INT NOT NULL,
+    [Status] INT DEFAULT 0 NOT NULL,
+    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    [RespondedAt] DATETIMEOFFSET NULL,
+    CONSTRAINT [PK_Friendships] PRIMARY KEY CLUSTERED ([Id]),
+    CONSTRAINT [FK_Friendships_Users_RequesterId] FOREIGN KEY ([RequesterId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_Friendships_Users_AddresseeId] FOREIGN KEY ([AddresseeId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+-- Create CommentReactions Table
+CREATE TABLE [SocialMediaDB].[CommentReactions] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [UserId] INT NOT NULL,
+    [CommentId] INT NOT NULL,
+    [ReactionType] INT NOT NULL,
+    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    CONSTRAINT [PK_CommentReactions] PRIMARY KEY CLUSTERED ([Id]),
+    CONSTRAINT [FK_CommentReactions_Users_UserId] FOREIGN KEY ([UserId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_CommentReactions_Comments_CommentId] FOREIGN KEY ([CommentId]) 
+        REFERENCES [SocialMediaDB].[Comments] ([Id]) ON DELETE CASCADE
+);
+GO
+
+-- Create PostReactions Table
+CREATE TABLE [SocialMediaDB].[PostReactions] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [UserId] INT NOT NULL,
+    [PostId] INT NOT NULL,
+    [ReactionType] INT NOT NULL,
+    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    CONSTRAINT [PK_PostReactions] PRIMARY KEY CLUSTERED ([Id]),
+    CONSTRAINT [FK_PostReactions_Users_UserId] FOREIGN KEY ([UserId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE CASCADE,
+    CONSTRAINT [FK_PostReactions_Posts_PostId] FOREIGN KEY ([PostId]) 
+        REFERENCES [SocialMediaDB].[Posts] ([Id]) ON DELETE CASCADE
+);
+GO
+
+-- Create Notifications Table
+CREATE TABLE [SocialMediaDB].[Notifications] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [RecipientId] INT NOT NULL,
+    [LatestActorId] INT NOT NULL,
+    [GroupKey] NVARCHAR(200) NOT NULL,
+    [ActorCount] INT DEFAULT 1 NOT NULL,
+    [EntityId] INT NOT NULL,
+    [NotificationType] INT NOT NULL,
+    [NotificationEntityType] INT NOT NULL,
+    [IsRead] BIT DEFAULT 0 NOT NULL,
+    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    [LastUpdatedAt] DATETIMEOFFSET NULL,
+    CONSTRAINT [PK_Notifications] PRIMARY KEY CLUSTERED ([Id]),
+    CONSTRAINT [FK_Notifications_Users_RecipientId] FOREIGN KEY ([RecipientId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION,
+    CONSTRAINT [FK_Notifications_Users_LatestActorId] FOREIGN KEY ([LatestActorId]) 
+        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+-- ==========================================
+-- CREATE INDEXES
+-- ==========================================
+
+-- Indexes for Posts
+CREATE NONCLUSTERED INDEX [IX_Posts_AuthorId] ON [SocialMediaDB].[Posts] ([AuthorId]);
+GO
+
+-- Indexes for Comments
+CREATE NONCLUSTERED INDEX [IX_Comments_PostId] ON [SocialMediaDB].[Comments] ([PostId]);
+CREATE NONCLUSTERED INDEX [IX_Comments_AuthorId] ON [SocialMediaDB].[Comments] ([AuthorId]);
+CREATE NONCLUSTERED INDEX [IX_Comments_ParentCommentId] ON [SocialMediaDB].[Comments] ([ParentCommentId]);
+GO
+
+-- Indexes for Friendships
+CREATE NONCLUSTERED INDEX [IX_Friendships_RequesterId] ON [SocialMediaDB].[Friendships] ([RequesterId]);
+CREATE NONCLUSTERED INDEX [IX_Friendships_AddresseeId] ON [SocialMediaDB].[Friendships] ([AddresseeId]);
+GO
+
+-- Indexes for CommentReactions
+CREATE NONCLUSTERED INDEX [IX_CommentReactions_UserId] ON [SocialMediaDB].[CommentReactions] ([UserId]);
+CREATE NONCLUSTERED INDEX [IX_CommentReactions_CommentId] ON [SocialMediaDB].[CommentReactions] ([CommentId]);
+GO
+
+-- Indexes for PostReactions
+CREATE NONCLUSTERED INDEX [IX_PostReactions_UserId] ON [SocialMediaDB].[PostReactions] ([UserId]);
+CREATE NONCLUSTERED INDEX [IX_PostReactions_PostId] ON [SocialMediaDB].[PostReactions] ([PostId]);
+GO
+
+-- Indexes for Notifications
+CREATE NONCLUSTERED INDEX [IX_Notifications_RecipientId] ON [SocialMediaDB].[Notifications] ([RecipientId]);
+CREATE NONCLUSTERED INDEX [IX_Notifications_LatestActorId] ON [SocialMediaDB].[Notifications] ([LatestActorId]);
+CREATE NONCLUSTERED INDEX [IX_Notifications_GroupKey] ON [SocialMediaDB].[Notifications] ([GroupKey]);
+CREATE NONCLUSTERED INDEX [IX_Notifications_IsRead] ON [SocialMediaDB].[Notifications] ([IsRead]);
+CREATE NONCLUSTERED INDEX [IX_Notifications_LastUpdatedAt] ON [SocialMediaDB].[Notifications] ([LastUpdatedAt]);
+GO
