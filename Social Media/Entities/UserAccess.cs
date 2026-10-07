@@ -7,5 +7,8 @@
         public required string AccessType { get; set; } = string.Empty;
         public string? CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
+
+
+        public User User { get; set; } = null!;
     }
 }

@@ -47,8 +47,8 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddHttpContextAccessor();
 
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
+//builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+//    ConnectionMultiplexer.Connect(builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379"));
 
 // ─── JWT Authentication ───
 var jwtSecret = builder.Configuration["Jwt:Secret"];

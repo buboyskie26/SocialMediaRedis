@@ -21,14 +21,18 @@ namespace Social_Media.EntityConfigurations
 
             builder.Property(u => u.AccessType)
                         .IsRequired()
-                        .HasMaxLength(50); // Maps automatically to character varying(50)
+                        .HasMaxLength(50); //  
 
             builder.Property(u => u.CreatedBy)
-                        .HasMaxLength(256); // Maps automatically to character varying(256)
+                        .HasMaxLength(256); // 
 
-            builder.Property(u => u.CreatedAt)
+            builder.Property(ua => ua.CreatedAt)
                         .IsRequired()
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasDefaultValueSql("GETUTCDATE()");
+            builder.HasOne(ua => ua.User)
+                .WithMany()
+                .HasForeignKey(ua => ua.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
