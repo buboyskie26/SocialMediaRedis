@@ -7,112 +7,110 @@ BEGIN
 END
 GO
 
--- ==========================================
--- CREATE TABLES under SocialMediaDB Schema
--- ==========================================
-
 -- Create Users Table (Parent Table)
-CREATE TABLE [SocialMediaDB].[Users] (
+CREATE TABLE [SocialMediaDB].[dbo].[Users] (
     [Id] INT IDENTITY(1,1) NOT NULL,
     [Username] NVARCHAR(50) NOT NULL,
     [Email] NVARCHAR(256) NOT NULL,
     [PasswordHash] NVARCHAR(MAX) NOT NULL,
     [DisplayName] NVARCHAR(100) NULL,
     [Bio] NVARCHAR(500) NULL,
-    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    [UpdatedAt] DATETIMEOFFSET NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
+    [UpdatedAt] DATETIME2 NULL,
     [IsDeleted] BIT DEFAULT 0 NOT NULL,
     CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED ([Id])
 );
 GO
 
 -- Create Posts Table
-CREATE TABLE [SocialMediaDB].[Posts] (
+CREATE TABLE [SocialMediaDB].[dbo].[Posts] (
     [Id] INT IDENTITY(1,1) NOT NULL,
     [AuthorId] INT NOT NULL,
     [Content] NVARCHAR(MAX) NOT NULL,
     [PostImage] NVARCHAR(MAX) NULL,
     [Visibility] INT DEFAULT 0 NOT NULL,
-    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    [UpdatedAt] DATETIMEOFFSET NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
+    [UpdatedAt] DATETIME2 NULL,
     [IsEdited] BIT DEFAULT 0 NOT NULL,
     [IsDeleted] BIT DEFAULT 0 NOT NULL,
+    [CommentsCount] INT DEFAULT 0 NOT NULL,
+    [ReactionsCount] INT DEFAULT 0 NOT NULL,
     CONSTRAINT [PK_Posts] PRIMARY KEY CLUSTERED ([Id]),
     CONSTRAINT [FK_Posts_Users_AuthorId] FOREIGN KEY ([AuthorId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE NO ACTION
 );
 GO
 
 -- Create Comments Table
-CREATE TABLE [SocialMediaDB].[Comments] (
+CREATE TABLE [SocialMediaDB].[dbo].[Comments] (
     [Id] INT IDENTITY(1,1) NOT NULL,
     [PostId] INT NOT NULL,
     [AuthorId] INT NOT NULL,
     [ParentCommentId] INT NULL,
     [Content] NVARCHAR(1000) NOT NULL,
     [CommentImage] NVARCHAR(MAX) NULL,
-    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    [UpdatedAt] DATETIMEOFFSET NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
+    [UpdatedAt] DATETIME2 NULL,
     [IsEdited] BIT DEFAULT 0 NOT NULL,
     [IsDeleted] BIT DEFAULT 0 NOT NULL,
     CONSTRAINT [PK_Comments] PRIMARY KEY CLUSTERED ([Id]),
     CONSTRAINT [FK_Comments_Posts_PostId] FOREIGN KEY ([PostId]) 
-        REFERENCES [SocialMediaDB].[Posts] ([Id]) ON DELETE NO ACTION,
+        REFERENCES [SocialMediaDB].[dbo].[Posts] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_Comments_Users_AuthorId] FOREIGN KEY ([AuthorId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION,
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_Comments_Comments_ParentCommentId] FOREIGN KEY ([ParentCommentId]) 
-        REFERENCES [SocialMediaDB].[Comments] ([Id]) ON DELETE NO ACTION
+        REFERENCES [SocialMediaDB].[dbo].[Comments] ([Id]) ON DELETE NO ACTION
 );
 GO
 
 -- Create Friendships Table
-CREATE TABLE [SocialMediaDB].[Friendships] (
+CREATE TABLE [SocialMediaDB].[dbo].[Friendships] (
     [Id] INT IDENTITY(1,1) NOT NULL,
     [RequesterId] INT NOT NULL,
     [AddresseeId] INT NOT NULL,
     [Status] INT DEFAULT 0 NOT NULL,
-    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    [RespondedAt] DATETIMEOFFSET NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
+    [RespondedAt] DATETIME2 NULL,
     CONSTRAINT [PK_Friendships] PRIMARY KEY CLUSTERED ([Id]),
     CONSTRAINT [FK_Friendships_Users_RequesterId] FOREIGN KEY ([RequesterId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION,
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_Friendships_Users_AddresseeId] FOREIGN KEY ([AddresseeId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE NO ACTION
 );
 GO
 
 -- Create CommentReactions Table
-CREATE TABLE [SocialMediaDB].[CommentReactions] (
+CREATE TABLE [SocialMediaDB].[dbo].[CommentReactions] (
     [Id] INT IDENTITY(1,1) NOT NULL,
     [UserId] INT NOT NULL,
     [CommentId] INT NOT NULL,
     [ReactionType] INT NOT NULL,
-    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
     CONSTRAINT [PK_CommentReactions] PRIMARY KEY CLUSTERED ([Id]),
     CONSTRAINT [FK_CommentReactions_Users_UserId] FOREIGN KEY ([UserId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE CASCADE,
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_CommentReactions_Comments_CommentId] FOREIGN KEY ([CommentId]) 
-        REFERENCES [SocialMediaDB].[Comments] ([Id]) ON DELETE CASCADE
+        REFERENCES [SocialMediaDB].[dbo].[Comments] ([Id]) ON DELETE CASCADE
 );
 GO
 
 -- Create PostReactions Table
-CREATE TABLE [SocialMediaDB].[PostReactions] (
+CREATE TABLE [SocialMediaDB].[dbo].[PostReactions] (
     [Id] INT IDENTITY(1,1) NOT NULL,
     [UserId] INT NOT NULL,
     [PostId] INT NOT NULL,
     [ReactionType] INT NOT NULL,
-    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
     CONSTRAINT [PK_PostReactions] PRIMARY KEY CLUSTERED ([Id]),
     CONSTRAINT [FK_PostReactions_Users_UserId] FOREIGN KEY ([UserId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE CASCADE,
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_PostReactions_Posts_PostId] FOREIGN KEY ([PostId]) 
-        REFERENCES [SocialMediaDB].[Posts] ([Id]) ON DELETE CASCADE
+        REFERENCES [SocialMediaDB].[dbo].[Posts] ([Id]) ON DELETE CASCADE
 );
 GO
 
 -- Create Notifications Table
-CREATE TABLE [SocialMediaDB].[Notifications] (
+CREATE TABLE [SocialMediaDB].[dbo].[Notifications] (
     [Id] INT IDENTITY(1,1) NOT NULL,
     [RecipientId] INT NOT NULL,
     [LatestActorId] INT NOT NULL,
@@ -122,13 +120,27 @@ CREATE TABLE [SocialMediaDB].[Notifications] (
     [NotificationType] INT NOT NULL,
     [NotificationEntityType] INT NOT NULL,
     [IsRead] BIT DEFAULT 0 NOT NULL,
-    [CreatedAt] DATETIMEOFFSET DEFAULT SYSDATETIMEOFFSET() NOT NULL,
-    [LastUpdatedAt] DATETIMEOFFSET NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
+    [LastUpdatedAt] DATETIME2 NULL,
     CONSTRAINT [PK_Notifications] PRIMARY KEY CLUSTERED ([Id]),
     CONSTRAINT [FK_Notifications_Users_RecipientId] FOREIGN KEY ([RecipientId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION,
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE NO ACTION,
     CONSTRAINT [FK_Notifications_Users_LatestActorId] FOREIGN KEY ([LatestActorId]) 
-        REFERENCES [SocialMediaDB].[Users] ([Id]) ON DELETE NO ACTION
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE NO ACTION
+);
+GO
+
+
+-- Create tblUserAccess Table
+CREATE TABLE [SocialMediaDB].[dbo].[tblUserAccess] (
+    [UserAccessID] INT IDENTITY(1,1) NOT NULL,
+    [UserId] INT NOT NULL,
+    [AccessType] NVARCHAR(50) NOT NULL,
+    [CreatedAt] DATETIME2 DEFAULT GETUTCDATE() NOT NULL,
+    [CreatedBy] NVARCHAR(100) NULL,
+    CONSTRAINT [PK_tblUserAccess] PRIMARY KEY CLUSTERED ([UserAccessID]),
+    CONSTRAINT [FK_tblUserAccess_Users_UserId] FOREIGN KEY ([UserId]) 
+        REFERENCES [SocialMediaDB].[dbo].[Users] ([Id]) ON DELETE CASCADE
 );
 GO
 
